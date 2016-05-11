@@ -130,7 +130,7 @@ def vlianie_csvlines(variant):
     headers_res = None
     for var,res in vlianie_params(variant):
         if headers_res == None:
-            headers_res = [k for k,v in res.items() if type(v) is numpy.float64]
+            headers_res = sorted([k for k,v in res.items() if type(v) is numpy.float64])
             yield (",".join(headers_v + headers_res)) + "\n"
         yield (",".join([
                         str(var[h.split('_')[0]][int(h.split('_')[1])-1])
