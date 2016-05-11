@@ -3,6 +3,7 @@ import numpy
 import itertools
 import copy
 import sys
+import os
 from numpy.linalg import solve
 
 
@@ -158,17 +159,13 @@ varianti = {
     }
 }
 
-if len(sys.argv) == 2:
-    variant = varianti.get(sys.argv[1])
-    if variant == None:
-        print("Variant '%s' doen't exist." % (sys.argv[1],), file=sys.stderr)
-        sys.exit(2)
-else:
-    print("Usage: %s VARIANT.\nPlease specify one of the variants defined in the code." % (sys.argv[0],), file=sys.stderr)
-    sys.exit(1)
-
-make_csv(vlianie_csvlines(variant), "Kg-Tno-Trem.csv")
-probas = coctaianiia_csvlines(variant)
-for neogr in [False, True]:
-    make_csv(probas[neogr],
-            "veraiatnosti_coctaianiia_%sogranicheni.csv" % ("ne" if neogr else "",))
+for nomer_variant,variant in varianti.items():
+    j = os.path.join
+    folder = j("resultati", "variant%s"%(nomer_variant,))
+    os.makedirs(folder, exist_ok=True)
+ 
+    make_csv(vlianie_csvlines(variant), j(folder, "Kg-Tno-Trem.csv"))
+    probas = coctaianiia_csvlines(variant)
+    for neogr in [False, True]:
+        make_csv(probas[neogr],
+                j(folder, "veraiatnosti_coctaianiia_%sogranicheni.csv" % ("ne" if neogr else "",)))
