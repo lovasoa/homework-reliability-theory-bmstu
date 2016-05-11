@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import numpy
 import itertools
 import copy
@@ -10,55 +11,29 @@ def delath_kursovuyu(variant):
     mu      = variant["mu"]
     Ns      = variant["Ns"]
     N1s     = variant["N1s"]
+    S       = variant["S"]
 
     P = {True:[], False:[]}
     lambdamus = {True:[], False:[]}
 
     def get_lams(step, neogr):
-        if not neogr:
-            return [i * lambdas[step] for i in range(Ns[step], Ns[step]-N1s[step]-1, -1)]
-        else:
-            return [i * lambdas[step] for i in range(Ns[step], 0, -1)]
+        N, N1 = Ns[step], Ns[step] if neogr else N1s[step]+1
+        return lambdas[step] * numpy.arange(N, N-N1, -1.)
 
     def get_mus(step, neogr):
-        N = Ns[step]
-        N1 = N1s[step]+1
-        if neogr:
-            if step >=1:
-                PP = P[neogr][step-1]
-                P0, P1 = PP[0,0], PP[1,0]
-                return [(1+i)*mu[step]*P0 + mu[step]*P1 for i in range(N)]
-            else:
-                return [(1+i)*mu[step] for i in range(N)]
-        else:
-            if step==0: mu1, mu2 = (mu[step], 2*mu[step])
-            else:
-                PP = P[neogr][step-1]
-                mP0, mP1 = mu[step]*PP[0,0], mu[step]*PP[1,0]
-                mu1, mu2 = (mP0+mP1, 2*mP0+mP1)
-            return [(mu1 if i==0 else mu2) for i in range(N1)]
+        N = Ns[step] if neogr else N1s[step]+1
+        PP = numpy.array([1]) if neogr or step==0 else P[neogr][step-1]
+        multij = lambda i,j: numpy.minimum(i+1, numpy.maximum(S-j,0))
+        mult = numpy.fromfunction(multij, (N, len(PP)))
+        return (mu[step] * mult.dot(PP)).flatten()
 
-    def compute_probabilities(p_lambdas, p_mus):
-        N = len(p_lambdas)+1
-        lams = {k:i for k,i in enumerate(p_lambdas)}
-        mus  = {k:i for k,i in enumerate(p_mus)}
-        
-        def coeff(i,j, lams, mus):
-            if i == j:
-                return -(lams.get(j, 0) + mus.get(j-1,0))
-            if i == j+1:
-                return mus.get(j,0)
-            if i == j-1:
-                return lams.get(i,0)
-            else: return 0
-
-        mat = numpy.mat([
-            [coeff(i,j, lams, mus) for i in range(N)]
-            for j in range(N)
-        ])
-
+    def compute_probabilities(la, mu):
+        diag = -(numpy.concatenate((la, [0])) + numpy.concatenate(([0], mu)))
+        mat = numpy.diag(diag)
+        mat[numpy.fromfunction(lambda i,j:j==i-1, mat.shape)] = la # lower diagonal
+        mat[numpy.fromfunction(lambda i,j:j==i+1, mat.shape)] = mu # upper diagonal
         eigenvals, eigenvects = numpy.linalg.eig(mat)
-        idx = eigenvals.argsort()[::-1][0]
+        idx = eigenvals.argsort()[::-1][0] # the index of the lowest eigenvalue
         solnn = eigenvects[:,idx]
         sol = solnn / numpy.sum(solnn)
         return sol
@@ -82,7 +57,7 @@ def delath_kursovuyu(variant):
         for neogr in [False, True]:
             prod = 1
             for i,v in zip(idxs, P[neogr]):
-                prod *= v[i][0,0]
+                prod *= v[i]
             Pijk[(neogr,idxs)] = prod
     for idxs in itertools.product(*map(lambda x:range(x+2), N1s)):
         s,sno = (0,0)
@@ -138,10 +113,10 @@ def vlianie_params(variant):
 
 def vlianie_csvlines(variant):
     res = list(vlianie_params(variant))
-    headers_v = [ str(k) + '_' + str(n+1)
-                    for k,v in variant.items()
-                    for n in range(len(v))
-              ]
+    headers_v = [ "%s_%d" % (header_name, header_idx+1)
+                    for header_name in ("lambdas", "mu")
+                    for header_idx in range(len(variant[header_name]))
+                ]
     headers_res = None
     for var,res in vlianie_params(variant):
         if headers_res == None:
@@ -164,19 +139,22 @@ varianti = {
         "lambdas" : [0.02, 0.07, 0.06],
         "mu"      : [0.7 , 1.3 , 1.2 ],
         "Ns"      : [7,    7,    4   ],
-        "N1s"     : [4,    4,    2   ]
+        "N1s"     : [4,    4,    2   ],
+        "S"       : 2
     },
     "1" : {
         "lambdas" : [0.01, 0.05, 0.09],
         "mu"      : [1,    0.7,  1.5 ],
         "Ns"      : [3,    5,    3   ],
-        "N1s"     : [2,    3,    2   ]
+        "N1s"     : [2,    3,    2   ],
+        "S"       : 2
     },
     "3" : {
         "lambdas" : [0.03, 0.07, 0.07],
         "mu"      : [1,    0.9,  1.5 ],
         "Ns"      : [5,    7,    4   ],
-        "N1s"     : [3,    3,    2   ]
+        "N1s"     : [3,    3,    2   ],
+        "S"       : 2
     }
 }
 
