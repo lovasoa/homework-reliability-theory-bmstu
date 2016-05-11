@@ -101,15 +101,15 @@ def coctaianiia_csvlines(variant):
 
 def vlianie_params(variant):
     variations = {
-        "lambdas": numpy.arange(0.01, 0.11, 0.01),
-        "mu"     : numpy.arange(0.5 , 1.5, 0.1 )
+        "lambdas": numpy.arange(0.00, 0.10, 0.01),
+        "mu"     : numpy.arange(0.0 , 1.0, 0.1  )
     }
     for param in ("lambdas", "mu"):
         variant_mut = copy.deepcopy(variant)
         param_value = numpy.array(variant[param])
-        for i in numpy.eye(len(param_value)):
-            for j in variations[param]:
-                variant_mut[param] = (param_value - i*param_value) + i*j
+        for idx_modif in numpy.eye(len(param_value)):
+            for delta in variations[param]:
+                variant_mut[param] = param_value + idx_modif * delta
                 yield (variant_mut, delath_kursovuyu(variant_mut))
 
 def vlianie_csvlines(variant):
