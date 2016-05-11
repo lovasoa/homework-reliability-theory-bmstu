@@ -84,19 +84,28 @@ def delath_kursovuyu(variant):
         "Tno" : Tno,
         "Trem" : Trem,
         "P" : P,
-        "lambdamus" : lambdamus
+        "lambdamus" : lambdamus,
+        "Pijk": Pijk,
+        "SumPijk": PisprTmp
     }
 
-def coctaianiia_csvlines(variant):
+def yield_pijk(kursovuyu):
+    yield (",".join(("i","j","k",
+                    "Pijk_ogr (veraiatnosth X=i Y=j Z=K)",
+                    "sum Pijk_ogr (veraiatnosth X<=i Y<=j Z<=K)",
+                    "Pijk_neogr (veraiatnosth X=i Y=j Z=K)",
+                    "sum Pijk_neogr (veraiatnosth X<=i Y<=j Z<=K)",
+                    )) + "\n")
+
+def coctaianiia_csvlines(kursovuyu):
     def yield_csv(P, lambdamus):
         yield "i,nomer otkazavshih elementov i-ogo typa,veraiatnosth,lambda (i -> i+1),mu (i+1 -> i)\n"
         for i,probas in enumerate(P):
             for j,proba in enumerate(probas):
                 l, m = (lambdamus[i][lm][j] if j<len(lambdamus[i][lm]) else 0 for lm in ("lambda","mu"))
                 yield "%d,%d,%.10g,%.10g,%.10g\n" % (i+1, j, proba, l, m)
-    res = delath_kursovuyu(variant)
-    P = res["P"]
-    lambdamus = res["lambdamus"]
+    P = kursovuyu["P"]
+    lambdamus = kursovuyu["lambdamus"]
     return {neogr:yield_csv(P[neogr],lambdamus[neogr]) for neogr in (False, True)}
 
 def vlianie_params(variant):
@@ -165,7 +174,8 @@ for nomer_variant,variant in varianti.items():
     os.makedirs(folder, exist_ok=True)
  
     make_csv(vlianie_csvlines(variant), j(folder, "Kg-Tno-Trem.csv"))
-    probas = coctaianiia_csvlines(variant)
+    kursovuyu = delath_kursovuyu(variant)
+    probas = coctaianiia_csvlines(kursovuyu)
     for neogr in [False, True]:
         make_csv(probas[neogr],
                 j(folder, "veraiatnosti_coctaianiia_%sogranicheni.csv" % ("ne" if neogr else "",)))
