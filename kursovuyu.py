@@ -89,11 +89,11 @@ def delath_kursovuyu(variant):
 
 def coctaianiia_csvlines(variant):
     def yield_csv(P, lambdamus):
-        yield "i, nomer otkazavshih elementov i-ogo typa, veraiatnosth, lambda (i -> i+1), mu (i+1 -> i)\n"
+        yield "i,nomer otkazavshih elementov i-ogo typa,veraiatnosth,lambda (i -> i+1),mu (i+1 -> i)\n"
         for i,probas in enumerate(P):
             for j,proba in enumerate(probas):
                 l, m = (lambdamus[i][lm][j] if j<len(lambdamus[i][lm]) else 0 for lm in ("lambda","mu"))
-                yield "%d, %d, %.10g, %.10g, %.10g\n" % (i+1, j, proba, l, m)
+                yield "%d,%d,%.10g,%.10g,%.10g\n" % (i+1, j, proba, l, m)
     res = delath_kursovuyu(variant)
     P = res["P"]
     lambdamus = res["lambdamus"]
