@@ -90,12 +90,18 @@ def delath_kursovuyu(variant):
     }
 
 def yield_pijk(kursovuyu):
-    yield (",".join(("i","j","k",
+    PP = kursovuyu["P"][False]
+    yield (",".join([chr(ord("i") + n) for n in range(len(PP))] + [
                     "Pijk_ogr (veraiatnosth X=i Y=j Z=K)",
                     "sum Pijk_ogr (veraiatnosth X<=i Y<=j Z<=K)",
                     "Pijk_neogr (veraiatnosth X=i Y=j Z=K)",
                     "sum Pijk_neogr (veraiatnosth X<=i Y<=j Z<=K)",
-                    )) + "\n")
+                    ]) + "\n")
+    for idxs in itertools.product(*map(lambda l:range(len(l)), PP)):
+        yield ",".join([str(i) for i in idxs] + [
+                            "%.10g" % (kursovuyu[Ptyp][(neogr,idxs)],)
+                            for neogr in (False, True) for Ptyp in ("Pijk", "SumPijk")
+                        ]) + "\n"
 
 def coctaianiia_csvlines(kursovuyu):
     def yield_csv(P, lambdamus):
@@ -179,3 +185,4 @@ for nomer_variant,variant in varianti.items():
     for neogr in [False, True]:
         make_csv(probas[neogr],
                 j(folder, "veraiatnosti_coctaianiia_%sogranicheni.csv" % ("ne" if neogr else "",)))
+    make_csv(yield_pijk(kursovuyu), j(folder, "Pijk.csv"))
