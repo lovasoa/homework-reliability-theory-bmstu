@@ -39,39 +39,27 @@ def delath_kursovuyu(variant):
         sol = solnn / numpy.sum(solnn)
         return sol
 
+    Pijk = {}
+    PijkSum = {}
     for neogr in [False, True]:
-        #print("%sogranichenii:" % ("ne" if neogr else "",))
         for step in range(0,len(Ns)):
-            #print("step: %d" % (step,))
             lams = get_lams(step, neogr)
             mus = get_mus(step, neogr)
             lambdamus[neogr].append({"lambda":lams, "mu":mus})
-            #print(lams, mus)
             res = compute_probabilities(lams, mus)
             P[neogr].append(res)
-            #print(res)
 
-    Pijk = {}
-    PisprTmp = {}
-    for idxs in itertools.product(*map(lambda x:range(x+2), N1s)):
-        vals = []
-        for neogr in [False, True]:
-            prod = 1
-            for i,v in zip(idxs, P[neogr]):
-                prod *= v[i]
-            Pijk[(neogr,idxs)] = prod
-    for idxs in itertools.product(*map(lambda x:range(x+2), N1s)):
-        s,sno = (0,0)
-        for idxs2 in itertools.product(*map(lambda x:range(x+1), idxs)):
-            s += Pijk[(False,idxs2)]
-            sno += Pijk[(True,idxs2)]
-        PisprTmp[(False, idxs)] = s
-        PisprTmp[(True, idxs)] = sno
-        #print("P%d%d%d,%.10f,%.10f" % (idxs + (s,sno)) )
+        prod = numpy.array(1)
+        for i,l in enumerate(reversed(P[neogr])):
+            prod = prod * l.reshape([len(l)] + [1]*i)
+        cumsum = prod
+        for i in range(len(prod.shape)):
+            cumsum = numpy.cumsum(cumsum, i)
+        Pijk[neogr] = prod
+        PijkSum[neogr] = cumsum
 
-    Pispr = PisprTmp[(False, tuple(N1s))]
-    PisprPrem = PisprTmp[(False, tuple(map(lambda x:x+1, N1s)))]
-    Kg = Pispr / PisprPrem
+    Pispr = PijkSum[False][tuple(N1s)]
+    Kg = Pispr
     lotkaz = sum(l*n for l,n in zip(lambdas, Ns))
     mu_eq = list(map(lambda l:l["mu"][0], lambdamus[False]))
     mu_system = sum(mu_eq)
@@ -86,7 +74,7 @@ def delath_kursovuyu(variant):
         "P" : P,
         "lambdamus" : lambdamus,
         "Pijk": Pijk,
-        "SumPijk": PisprTmp
+        "SumPijk": PijkSum
     }
 
 def yield_pijk(kursovuyu):
@@ -99,7 +87,7 @@ def yield_pijk(kursovuyu):
                     ]) + "\n")
     for idxs in itertools.product(*map(lambda l:range(len(l)), PP)):
         yield ",".join([str(i) for i in idxs] + [
-                            "%.10g" % (kursovuyu[Ptyp][(neogr,idxs)],)
+                            "%.10g" % (kursovuyu[Ptyp][neogr][tuple(idxs)],)
                             for neogr in (False, True) for Ptyp in ("Pijk", "SumPijk")
                         ]) + "\n"
 
