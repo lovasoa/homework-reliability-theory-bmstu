@@ -10,19 +10,20 @@ from numpy.linalg import solve
 def delath_kursovuyu(variant):
     lambdas = variant["lambdas"]
     mu      = variant["mu"]
-    Ns      = variant["Ns"]
-    N1s     = variant["N1s"]
+    Ns      = numpy.array(variant["Ns"])
+    N1s     = numpy.array(variant["N1s"])
     S       = variant["S"]
+    last_working_state = Ns - N1s
 
     P = {True:[], False:[]}
     lambdamus = {True:[], False:[]}
 
     def get_lams(step, neogr):
-        N, N1 = Ns[step], Ns[step] if neogr else N1s[step]+1
-        return lambdas[step] * numpy.arange(N, N-N1, -1.)
+        N, N1 = Ns[step], 1 if neogr else N1s[step]
+        return lambdas[step] * numpy.arange(N, N1-1, -1.)
 
     def get_mus(step, neogr):
-        N = Ns[step] if neogr else N1s[step]+1
+        N = Ns[step] if neogr else last_working_state[step]+1
         PP = numpy.array([1]) if neogr or step==0 else P[neogr][step-1]
         multij = lambda i,j: numpy.minimum(i+1, numpy.maximum(S-j,0))
         mult = numpy.fromfunction(multij, (N, len(PP)))
@@ -58,7 +59,7 @@ def delath_kursovuyu(variant):
         Pijk[neogr] = prod
         PijkSum[neogr] = cumsum
 
-    Pispr = PijkSum[False][tuple(N1s)]
+    Pispr = PijkSum[False][tuple(last_working_state)]
     Kg = Pispr
     lotkaz = sum(l*n for l,n in zip(lambdas, Ns))
     mu_eq = list(map(lambda l:l["mu"][0], lambdamus[False]))
