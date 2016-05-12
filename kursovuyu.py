@@ -5,6 +5,7 @@ import copy
 import sys
 import os
 from numpy.linalg import solve
+import pystache
 
 
 def delath_kursovuyu(variant):
@@ -170,6 +171,23 @@ varianti = {
     }
 }
 
+if pystache:
+    pystacheLoader = pystache.loader.Loader() 
+    template = pystache.parse(pystacheLoader.load_file("template.svg"))
+    def draw_schema(kursovuyu, neogr, step):
+        lm = kursovuyu["lambdamus"][neogr][step]
+        lambdas, mus = lm["lambda"], lm["mu"]
+        d = {
+            "width": 100 + 200*len(mus),
+            "states" : [{
+                            "lambda": "%.4g" % (lambdas[i],),
+                            "mu": "%.4g" % (mus[i],),
+                            "i":(i+1),
+                            "translate":i*200
+                        } for i in range(len(mus))]
+        }
+        return pystache.render(template, d)
+
 for nomer_variant,variant in varianti.items():
     j = os.path.join
     folder = j("resultati", "variant%s"%(nomer_variant,))
@@ -182,3 +200,11 @@ for nomer_variant,variant in varianti.items():
         make_csv(probas[neogr],
                 j(folder, "veraiatnosti_coctaianiia_%sogranicheni.csv" % ("ne" if neogr else "",)))
     make_csv(yield_pijk(kursovuyu), j(folder, "Pijk.csv"))
+    # draw schema
+    if pystache:
+        for neogr in (False, True):
+            for step in range(len(kursovuyu["P"][neogr])):
+                fname = "schema_%sogranicheni_%dogo_prioritet.svg" % ("ne" if neogr else "", step+1)
+                with open(j(folder, fname), "w") as f:
+                    f.write(draw_schema(kursovuyu, neogr, step))
+
