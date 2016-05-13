@@ -5,7 +5,8 @@ import copy
 import sys
 import os
 from numpy.linalg import solve
-import pystache
+try: import pystache
+except: pystache = None
 
 
 def delath_kursovuyu(variant):
