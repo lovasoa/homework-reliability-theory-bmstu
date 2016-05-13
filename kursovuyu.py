@@ -26,8 +26,9 @@ def delath_kursovuyu(variant):
 
     def get_mus(step, neogr):
         N = Ns[step] if neogr else last_working_state[step]+1
+        repairs = N if neogr else S
         PP = numpy.array([1]) if neogr or step==0 else P[neogr][step-1]
-        multij = lambda i,j: numpy.minimum(i+1, numpy.maximum(S-j,0))
+        multij = lambda i,j: numpy.minimum(i+1, numpy.maximum(repairs-j,0))
         mult = numpy.fromfunction(multij, (N, len(PP)))
         return (mu[step] * mult.dot(PP)).flatten()
 
